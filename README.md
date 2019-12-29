@@ -1,2 +1,2 @@
-# Deploy-VM-Azure
+# Deploy VM Azure
  

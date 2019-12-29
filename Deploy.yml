@@ -1,0 +1,63 @@
+- name: Create Linux Ubuntu VM - Azure.
+  hosts: localhost
+  connection: local
+  vars:
+    RESOURCE_GROUP: SELA-RG
+    VM_NAME: SELA
+    LOCATION: eastus
+    ADMIN_USERNAME: sela
+    ADMIN_PASS: Sela545454
+    VM_SIZE: Standard_DS1_v2
+  tasks:
+  - name: Create a resource group.
+    azure_rm_resourcegroup:
+      name: "{{ RESOURCE_GROUP }}"
+      location: "{{ LOCATION }}"
+  - name: Create virtual network.
+    azure_rm_virtualnetwork:
+      resource_group: "{{ RESOURCE_GROUP }}"
+      name: "{{ VM_NAME }}"
+      address_prefixes: "10.0.0.0/16"
+  - name: Add subnet.
+    azure_rm_subnet:
+      resource_group: "{{ RESOURCE_GROUP }}"
+      name: "{{ VM_NAME }}"
+      address_prefix: "10.0.1.0/24"
+      virtual_network: "{{ VM_NAME }}"
+  - name: Create public IP address.
+    azure_rm_publicipaddress:
+      resource_group: "{{ RESOURCE_GROUP }}"
+      allocation_method: Static
+      name: "{{ VM_NAME }}"
+  - name: Create Network Security Group that allows SSH via Port 22.
+    azure_rm_securitygroup:
+      resource_group: "{{ RESOURCE_GROUP }}"
+      name: "{{ VM_NAME }}"
+      rules:
+        - name: SSH
+          protocol: Tcp
+          destination_port_range: 22
+          access: Allow
+          priority: 1001
+          direction: Inbound
+  - name: Create virtual network interface card.
+    azure_rm_networkinterface:
+      resource_group: "{{ RESOURCE_GROUP }}"
+      name: "{{ VM_NAME }}"
+      virtual_network: "{{ VM_NAME }}"
+      subnet: "{{ VM_NAME }}"
+      public_ip_name: "{{ VM_NAME }}"
+      security_group: "{{ VM_NAME }}"
+  - name: Create Linux Ubuntu-18.04 LTS VM.
+    azure_rm_virtualmachine:
+      resource_group: "{{ RESOURCE_GROUP }}"
+      name: "{{ VM_NAME }}"
+      vm_size: "{{ VM_SIZE }}"
+      admin_username: "{{ ADMIN_USERNAME }}"
+      admin_password: "{{ ADMIN_PASS }}"
+      network_interfaces: "{{ VM_NAME }}"
+      image:
+        offer: UbuntuServer
+        publisher: Canonical
+        sku: 18.04-LTS
+        version: latest
